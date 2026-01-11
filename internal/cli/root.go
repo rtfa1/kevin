@@ -31,7 +31,7 @@ func NewRootCmd(cfg *core.ProjectConfig, s store.Store) *cobra.Command {
 			}
 
 			// Launch TUI
-			p := tea.NewProgram(tui.NewModel(s), tea.WithAltScreen())
+			p := tea.NewProgram(tui.NewModel(cfg, s), tea.WithAltScreen())
 			if _, err := p.Run(); err != nil {
 				return fmt.Errorf("error running TUI: %w", err)
 			}
@@ -42,6 +42,7 @@ func NewRootCmd(cfg *core.ProjectConfig, s store.Store) *cobra.Command {
 	cmd.AddCommand(app.newInitCmd())
 	cmd.AddCommand(app.newTaskCmd())
 	cmd.AddCommand(app.newRunCmd())
+	cmd.AddCommand(app.newDocsCmd(cmd))
 
 	return cmd
 }

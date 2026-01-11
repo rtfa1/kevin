@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/rtfa/kevin/internal/agent"
 	"github.com/rtfa/kevin/internal/core"
 	"github.com/rtfa/kevin/internal/store"
 )
@@ -20,6 +21,7 @@ type KeyMap struct {
 	Enter     key.Binding
 	MoveLeft  key.Binding
 	MoveRight key.Binding
+	Run       key.Binding
 }
 
 var Keys = KeyMap{
@@ -31,9 +33,11 @@ var Keys = KeyMap{
 	Enter:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "open task")),
 	MoveLeft:  key.NewBinding(key.WithKeys("H"), key.WithHelp("H", "move left")),
 	MoveRight: key.NewBinding(key.WithKeys("L"), key.WithHelp("L", "move right")),
+	Run:       key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "run agent")),
 }
 
 type Model struct {
+	config  *core.ProjectConfig
 	store   store.Store
 	columns []Column
 	active  int // active column index
@@ -42,9 +46,10 @@ type Model struct {
 	err     error
 }
 
-func NewModel(s store.Store) Model {
+func NewModel(cfg *core.ProjectConfig, s store.Store) Model {
 	m := Model{
-		store: s,
+		config: cfg,
+		store:  s,
 		columns: []Column{
 			NewColumn(core.StatusBacklog),
 			NewColumn(core.StatusTodo),
@@ -118,6 +123,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.ExecProcess(c, func(err error) tea.Msg {
 					return nil // We rely on FS watch to reload
 				})
+			}
+
+		case key.Matches(msg, Keys.Run):
+			selected := m.SelectedTask()
+			if selected != nil && selected.Assignee != "" {
+				// Find agent
+				var agentCfg *core.AgentConfig
+				for _, a := range m.config.Agents {
+					if a.Name == selected.Assignee {
+						agentCfg = &a
+						break
+					}
+				}
+
+				if agentCfg != nil {
+					// Duplicate logic from run.go for MVP simplicity
+					// In real app, refactor to shared service
+					cwd, _ := os.Getwd()
+					cmdSlice, envSlice, err := agent.Prepare(*agentCfg, *selected, cwd)
+					if err == nil {
+						// Create executable command
+						c := exec.Command(cmdSlice[0], cmdSlice[1:]...)
+						c.Env = append(os.Environ(), envSlice...)
+						c.Dir = cwd // or where?
+
+						return m, tea.ExecProcess(c, func(err error) tea.Msg {
+							// After returning, maybe show a status msg?
+							return nil
+						})
+					}
+				}
 			}
 
 		case key.Matches(msg, Keys.MoveLeft):
