@@ -1,0 +1,7 @@
+project:
+  name: "My Project"
+
+agents:
+  - name: "coder"
+    executor: "local" # or docker
+    command: ["echo", "I am a placeholder agent"]

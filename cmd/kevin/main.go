@@ -3,28 +3,39 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
-	"github.com/spf13/cobra"
+	"github.com/rtfa/kevin/internal/cli"
+	"github.com/rtfa/kevin/internal/core"
+	"github.com/rtfa/kevin/internal/store"
 )
 
 func main() {
+	// 1. Try Load Config
+	// We look in current directory .kevin/config.yaml
+	configPath := filepath.Join(".kevin", "config.yaml") // Relative for now as per PRD "Current Dir"
+
+	// Intentionally ignored error here (cfg might be nil) because 'init' command needs to run without config
+	cfg, _ := core.LoadConfig(configPath)
+
+	// 2. Init Store if config exists
+	var st store.Store
+	if cfg != nil {
+		var err error
+		dataDir := filepath.Join(".kevin", "board")
+		st, err = store.NewFileStore(dataDir)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error initializing store: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// 3. Init Root CLI with dependencies
+	rootCmd := cli.NewRootCmd(cfg, st)
+
+	// 4. Execute
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		// Cobra prints error if SilenceErrors is false (default)
 		os.Exit(1)
 	}
-}
-
-var rootCmd = &cobra.Command{
-	Use:   "kevin",
-	Short: "Kevin is a TUI-first Task Orchestrator",
-	Long: `Kevin connects your existing tools to a structured workflow,
-using the filesystem as the database.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: TUI Launch logic will go here
-		fmt.Println("Kevin is ready to help!")
-	},
-}
-
-func init() {
-	// Global flags will be defined here
 }
