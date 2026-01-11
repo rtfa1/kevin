@@ -99,5 +99,7 @@ agents:
 1.  User can initialize a repo with `kevin init`.
 2.  User can create a task via CLI.
 3.  User can see the task in TUI.
-4.  User can edit the task file in VSCode and see TUI update instantly.
-5.  User can run `kevin run <id>` to trigger a dummy agent (e.g., `echo "Hello" >> task.md`) and see the change.
+
+## 7. Development Guidelines
+*   **Testing**: Create tests when possible and makes sense.
+
