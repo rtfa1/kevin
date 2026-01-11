@@ -41,7 +41,7 @@ func NewRootCmd(cfg *core.ProjectConfig, s store.Store) *cobra.Command {
 
 	cmd.AddCommand(app.newInitCmd())
 	cmd.AddCommand(app.newTaskCmd())
-	// cmd.AddCommand(app.newRunCmd()) // Future
+	cmd.AddCommand(app.newRunCmd())
 
 	return cmd
 }

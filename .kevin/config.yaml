@@ -2,6 +2,7 @@ project:
   name: "My Project"
 
 agents:
-  - name: "coder"
-    executor: "local" # or docker
-    command: ["echo", "I am a placeholder agent"]
+  - name: "echo-agent"
+    executor: "local"
+    command: ["echo", "Agent running for task: {{.TaskID}} ({{.TaskTitle}}) at {{.TaskPath}}"]
+    env_pass: ["USER"]
